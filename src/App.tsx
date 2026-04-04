@@ -26,7 +26,7 @@ interface ImageFile {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('calculator');
+  const [activeTab, setActiveTab] = useState<Tab>('calendar');
   const [isDarkMode, setIsDarkMode] = useState(false);
   
   // Calculator State
@@ -237,17 +237,17 @@ export default function App() {
             : 'bg-white/80 border-slate-200 shadow-sm'
         }`}>
           <button
-            onClick={() => setActiveTab('calculator')}
+            onClick={() => setActiveTab('calendar')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'calculator' 
+              activeTab === 'calendar' 
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
                 : isDarkMode 
                   ? 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
             }`}
           >
-            <Calculator size={20} />
-            <span className="font-medium">Calculator</span>
+            <CalendarIcon size={20} />
+            <span className="font-medium">Calendar</span>
           </button>
           <button
             onClick={() => setActiveTab('converter')}
@@ -263,17 +263,17 @@ export default function App() {
             <span className="font-medium">PDF Converter</span>
           </button>
           <button
-            onClick={() => setActiveTab('calendar')}
+            onClick={() => setActiveTab('calculator')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === 'calendar' 
+              activeTab === 'calculator' 
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
                 : isDarkMode 
                   ? 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
             }`}
           >
-            <CalendarIcon size={20} />
-            <span className="font-medium">Calendar</span>
+            <Calculator size={20} />
+            <span className="font-medium">Calculator</span>
           </button>
         </nav>
 
@@ -565,6 +565,11 @@ function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
     }
   };
 
+  const clearSelection = () => {
+    setSelectedStart(null);
+    setSelectedEnd(null);
+  };
+
   const calculateDiff = () => {
     if (!selectedStart || !selectedEnd) return null;
     const diffTime = Math.abs(selectedEnd.getTime() - selectedStart.getTime());
@@ -614,23 +619,61 @@ function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
         : 'bg-white/70 border-slate-200 shadow-xl shadow-slate-200/50'
     }`}>
       {/* Range Info */}
-      <div className="mb-6 h-12 flex items-center justify-center">
-        {diff !== null ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 ${
-              isDarkMode ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
-            }`}
-          >
-            <CalendarIcon size={16} />
-            Total Days: {diff}
-          </motion.div>
-        ) : (
-          <p className={`text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-            Select two dates to calculate the difference
-          </p>
-        )}
+      <div className="mb-8 h-24 flex items-center justify-center gap-4">
+        <AnimatePresence mode="wait">
+          {selectedStart ? (
+            <div className="flex items-center gap-4">
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onClick={clearSelection}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border flex items-center gap-2 ${
+                  isDarkMode 
+                    ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20' 
+                    : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100/80'
+                }`}
+              >
+                <X size={14} />
+                Clear Selection
+              </motion.button>
+              
+              {diff !== null && (
+                <motion.div 
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  className={`px-6 py-3 rounded-2xl flex flex-col items-center justify-center transition-all ${
+                    isDarkMode 
+                      ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shadow-lg shadow-indigo-500/5' 
+                      : 'bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm'
+                  }`}
+                >
+                  <span className={`text-xs uppercase tracking-widest font-black mb-1 ${isDarkMode ? 'text-indigo-400/70' : 'text-indigo-400'}`}>
+                    Total Duration
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl md:text-5xl font-black tracking-tighter">
+                      {diff}
+                    </span>
+                    <span className="text-lg font-bold opacity-80">
+                      {diff === 1 ? 'Day' : 'Days'}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          ) : (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className={`text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}
+            >
+              Select two dates to calculate the difference
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
