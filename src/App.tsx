@@ -527,6 +527,8 @@ function CalcButton({ label, onClick, variant = 'default', className = '', isDar
 
 function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedStart, setSelectedStart] = useState<Date | null>(null);
+  const [selectedEnd, setSelectedEnd] = useState<Date | null>(null);
 
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
@@ -537,6 +539,37 @@ function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
 
   const nextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const prevYear = () => {
+    setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1));
+  };
+
+  const nextYear = () => {
+    setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1));
+  };
+
+  const handleDayClick = (day: number) => {
+    const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    
+    if (!selectedStart || (selectedStart && selectedEnd)) {
+      setSelectedStart(clickedDate);
+      setSelectedEnd(null);
+    } else {
+      if (clickedDate < selectedStart) {
+        setSelectedEnd(selectedStart);
+        setSelectedStart(clickedDate);
+      } else {
+        setSelectedEnd(clickedDate);
+      }
+    }
+  };
+
+  const calculateDiff = () => {
+    if (!selectedStart || !selectedEnd) return null;
+    const diffTime = Math.abs(selectedEnd.getTime() - selectedStart.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   const monthNames = [
@@ -550,6 +583,7 @@ function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
   const totalDays = daysInMonth(year, month);
   const startingDay = firstDayOfMonth(year, month);
   const today = new Date();
+  const diff = calculateDiff();
 
   const calendarDays = [];
   for (let i = 0; i < startingDay; i++) {
@@ -559,33 +593,91 @@ function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
     calendarDays.push(i);
   }
 
+  const isSelected = (day: number) => {
+    if (!day) return false;
+    const date = new Date(year, month, day);
+    if (selectedStart && date.getTime() === selectedStart.getTime()) return true;
+    if (selectedEnd && date.getTime() === selectedEnd.getTime()) return true;
+    return false;
+  };
+
+  const isInRange = (day: number) => {
+    if (!day || !selectedStart || !selectedEnd) return false;
+    const date = new Date(year, month, day);
+    return date > selectedStart && date < selectedEnd;
+  };
+
   return (
     <div className={`w-full max-w-2xl backdrop-blur-2xl border rounded-3xl p-6 md:p-8 transition-all duration-300 ${
       isDarkMode 
         ? 'bg-slate-900/40 border-white/10 shadow-2xl' 
         : 'bg-white/70 border-slate-200 shadow-xl shadow-slate-200/50'
     }`}>
-      <div className="flex items-center justify-between mb-8">
+      {/* Range Info */}
+      <div className="mb-6 h-12 flex items-center justify-center">
+        {diff !== null ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 ${
+              isDarkMode ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+            }`}
+          >
+            <CalendarIcon size={16} />
+            Total Days: {diff}
+          </motion.div>
+        ) : (
+          <p className={`text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+            Select two dates to calculate the difference
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
           {monthNames[month]} {year}
         </h2>
-        <div className="flex gap-2">
-          <button 
-            onClick={prevMonth}
-            className={`p-2 rounded-xl border transition-all ${
-              isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button 
-            onClick={nextMonth}
-            className={`p-2 rounded-xl border transition-all ${
-              isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <ChevronRight size={20} />
-          </button>
+        <div className="flex gap-4">
+          {/* Month Nav */}
+          <div className="flex gap-1 items-center">
+            <span className={`text-xs font-bold uppercase tracking-widest mr-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Month</span>
+            <button 
+              onClick={prevMonth}
+              className={`p-2 rounded-xl border transition-all ${
+                isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
+              }`}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button 
+              onClick={nextMonth}
+              className={`p-2 rounded-xl border transition-all ${
+                isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
+              }`}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+          {/* Year Nav */}
+          <div className="flex gap-1 items-center border-l pl-4 border-slate-200/20">
+            <span className={`text-xs font-bold uppercase tracking-widest mr-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Year</span>
+            <button 
+              onClick={prevYear}
+              className={`p-2 rounded-xl border transition-all ${
+                isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
+              }`}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button 
+              onClick={nextYear}
+              className={`p-2 rounded-xl border transition-all ${
+                isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
+              }`}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -600,20 +692,29 @@ function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
       <div className="grid grid-cols-7 gap-2">
         {calendarDays.map((day, index) => {
           const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          const selected = day ? isSelected(day) : false;
+          const inRange = day ? isInRange(day) : false;
+
           return (
-            <div 
+            <button 
               key={index} 
+              disabled={day === null}
+              onClick={() => day && handleDayClick(day)}
               className={`aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all ${
-                day === null ? '' : 
-                isToday 
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105 z-10' 
-                  : isDarkMode 
-                    ? 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-white/5' 
-                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/50 shadow-sm'
+                day === null ? 'cursor-default' : 
+                selected
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 scale-105 z-10' 
+                  : inRange
+                    ? isDarkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'
+                    : isToday 
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105 z-10' 
+                      : isDarkMode 
+                        ? 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-white/5' 
+                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/50 shadow-sm'
               }`}
             >
               {day}
-            </div>
+            </button>
           );
         })}
       </div>
