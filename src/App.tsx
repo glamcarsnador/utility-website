@@ -7,15 +7,17 @@ import {
   Download, 
   Plus, 
   X, 
-  ChevronRight,
   Loader2,
   UploadCloud,
   Sun,
-  Moon
+  Moon,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-type Tab = 'calculator' | 'converter';
+type Tab = 'calculator' | 'converter' | 'calendar';
 
 interface ImageFile {
   id: string;
@@ -260,6 +262,19 @@ export default function App() {
             <FileImage size={20} />
             <span className="font-medium">PDF Converter</span>
           </button>
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
+              activeTab === 'calendar' 
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
+                : isDarkMode 
+                  ? 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <CalendarIcon size={20} />
+            <span className="font-medium">Calendar</span>
+          </button>
         </nav>
 
         {/* Main Content Area */}
@@ -318,6 +333,16 @@ export default function App() {
                     <CalcButton label="." onClick={() => handleCalcInput('.')} isDarkMode={isDarkMode} />
                   </div>
                 </div>
+              </motion.div>
+            ) : activeTab === 'calendar' ? (
+              <motion.div
+                key="calendar"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full flex justify-center"
+              >
+                <CalendarView isDarkMode={isDarkMode} />
               </motion.div>
             ) : (
               <motion.div
@@ -497,5 +522,101 @@ function CalcButton({ label, onClick, variant = 'default', className = '', isDar
     >
       {label}
     </button>
+  );
+}
+
+function CalendarView({ isDarkMode }: { isDarkMode: boolean }) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const totalDays = daysInMonth(year, month);
+  const startingDay = firstDayOfMonth(year, month);
+  const today = new Date();
+
+  const calendarDays = [];
+  for (let i = 0; i < startingDay; i++) {
+    calendarDays.push(null);
+  }
+  for (let i = 1; i <= totalDays; i++) {
+    calendarDays.push(i);
+  }
+
+  return (
+    <div className={`w-full max-w-2xl backdrop-blur-2xl border rounded-3xl p-6 md:p-8 transition-all duration-300 ${
+      isDarkMode 
+        ? 'bg-slate-900/40 border-white/10 shadow-2xl' 
+        : 'bg-white/70 border-slate-200 shadow-xl shadow-slate-200/50'
+    }`}>
+      <div className="flex items-center justify-between mb-8">
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+          {monthNames[month]} {year}
+        </h2>
+        <div className="flex gap-2">
+          <button 
+            onClick={prevMonth}
+            className={`p-2 rounded-xl border transition-all ${
+              isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
+            }`}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button 
+            onClick={nextMonth}
+            className={`p-2 rounded-xl border transition-all ${
+              isDarkMode ? 'bg-slate-800 border-white/5 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-600'
+            }`}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-2 mb-4">
+        {days.map(day => (
+          <div key={day} className={`text-center text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-2">
+        {calendarDays.map((day, index) => {
+          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          return (
+            <div 
+              key={index} 
+              className={`aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all ${
+                day === null ? '' : 
+                isToday 
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105 z-10' 
+                  : isDarkMode 
+                    ? 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-white/5' 
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/50 shadow-sm'
+              }`}
+            >
+              {day}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
